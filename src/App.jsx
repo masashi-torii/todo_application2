@@ -1,10 +1,29 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
 import './App.css'
+import { getAllTodos, insertTodos } from './utils/supabaseFunctions';
 
 export const App = () => {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
+
+  //データベースからデータ取得
+  const [todos, setTodos] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+useEffect(() => {
+  const fetchTodos = async () => {
+    try {
+      const result = await getAllTodos();
+      setTodos(result.data || []);
+    } catch (e) {
+      console.error("データ取得エラー:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchTodos();
+}, []);
+
 
   // 配列で初期化する
   const [records, setRecords] = useState([]);
@@ -33,6 +52,8 @@ export const App = () => {
       }
       setRecords([...records, newRecord]);
 
+     insertTodos(inputNaiyoValue, inputTimeValue);
+
       // 累計時間を算出
       const newRecords = [...records, newRecord];
       const sumTime = newRecords.reduce((total, record) => total + record.time, 0);
@@ -59,6 +80,10 @@ export const App = () => {
   // エラーを追加する
   const [error, setError] = useState("");
 
+  if (isLoading) {
+    return <h1>Loading...</h1>;
+  }
+  
   return (
     <>
     <h1>学習記録一覧</h1>
@@ -68,6 +93,13 @@ export const App = () => {
     <input input="formNaiyo" type="text" name="naiyo" value={inputNaiyoValue} onChange={onChangeInputNaiyo}></input></div>
     <div>　　学習時間：
     <input type="number" name="studyTime" value={inputTimeValue} onChange={onChangeInputTime}></input>時間</div>
+    <div>
+    {Array.isArray(todos) && todos.map(todo =>(
+      <ul key={todo.id}>
+      {todo.title + "　　　" + todo.time + "時間"}
+    </ul>
+    ))}
+    </div>
     <button onClick={addRecord}>登録</button>
     <div>入力されている学習内容：{inputNaiyoValue}</div>
     <div>入力されている時間：{inputTimeValue}時間</div>
